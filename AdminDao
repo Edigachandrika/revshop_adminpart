@@ -1,0 +1,168 @@
+package com.revshop.dao;
+
+import java.util.List;
+
+import javax.persistence.EntityTransaction;
+
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.revshop.entity.Admin;
+import com.revshop.entity.Buyer;
+import com.revshop.entity.Complaints;
+import com.revshop.entity.Product;
+import com.revshop.entity.Retailer;
+
+import org.hibernate.query.Query;
+@Repository
+public class AdminDao implements AdminDaoInterface {
+
+    @Autowired
+    private SessionFactory sf;
+    
+    @Override
+    public Admin adminLoginDao(String email, String password) {
+        Admin a = null;
+        Session ss = sf.openSession();
+        Query q = ss.createQuery("from com.revshop.entity.Admin a where a.email = :aid and a.password = :pid");
+        q.setParameter("aid", email);
+        q.setParameter("pid", password);
+        List<Admin> al = q.getResultList();
+        if (al.size() > 0) {
+            a = al.get(0);
+        }
+        ss.close();
+        return a;
+    }
+
+    @Override
+    public boolean addProduct(Product product) {
+        Session session = null;
+        EntityTransaction transaction = null;
+        boolean isSuccess = false;
+
+        try {
+            session = sf.openSession();
+            transaction = session.beginTransaction();
+
+            session.save(product);
+
+            transaction.commit();
+            isSuccess = true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+
+        return isSuccess;
+    }
+
+    @Override
+    public int getProductCount() {
+        // Use the current session for the query
+        Session session = sf.getCurrentSession();
+        String hql = "SELECT COUNT(p) FROM Product p";
+        Query<Long> query = session.createQuery(hql, Long.class);
+        
+        // Handle potential null result
+        Long count = query.uniqueResult();
+        return (count != null) ? count.intValue() : 0; // Return 0 if count is null
+    }
+
+    @Override
+    public int getRegistrationCount() {
+        // Use the current session for the queries
+        Session session = sf.getCurrentSession();
+        String hql1 = "SELECT COUNT(b) FROM Buyer b"; 
+        String hql2 = "SELECT COUNT(r) FROM Retailer r"; 
+
+        Query<Long> buyerQuery = session.createQuery(hql1, Long.class);
+        Query<Long> retailerQuery = session.createQuery(hql2, Long.class);
+        
+        // Handle potential null results
+        Long buyerCount = buyerQuery.uniqueResult();
+        Long retailerCount = retailerQuery.uniqueResult();
+        
+        // Sum counts and return
+        return ((buyerCount != null ? buyerCount.intValue() : 0) + 
+                (retailerCount != null ? retailerCount.intValue() : 0));
+    }
+
+
+	@Override
+	public int getViewrCount() {
+		// Assuming you store view counts in a 'Viewer' entity or similar
+		Session session = sf.getCurrentSession();
+		String hql = "SELECT SUM(v.count) FROM Viewer v"; // Replace 'Viewer' and 'count' accordingly
+		Query<Long> query = session.createQuery(hql, Long.class);
+
+		// Return the total count of viewers, or 0 if there is no result
+		return query.uniqueResult() != null ? query.uniqueResult().intValue() : 0;
+	}
+
+	@Override
+	public List<Buyer> getAllUsers() {
+		Session session = sf.openSession();
+		String hql = "FROM Buyer"; // Adjust based on your entity structure
+		Query<Buyer> query = session.createQuery(hql, Buyer.class);
+		List<Buyer> users = query.getResultList();
+		session.close(); // Close the session to avoid memory leaks
+		return users;
+	}
+
+	@Override
+	public List<Product> getAllProducts() {
+		Session session = sf.openSession();
+		String hql = "FROM Product";
+		Query<Product> query = session.createQuery(hql, Product.class);
+		return query.getResultList();
+	}
+
+	@Override
+	public List<Complaints> getAllComplaints() {
+		Session session = sf.openSession();
+		String hql = "FROM Complaints"; // Adjust based on your entity structure
+		Query<Complaints> query = session.createQuery(hql, Complaints.class);
+		List<Complaints> complaints = query.getResultList();
+		session.close(); // Close the session to avoid memory leaks
+		return complaints;
+	}
+
+	@Override
+	public List<Retailer> getAllRegistrationRequests() {
+	    Session session = sf.openSession();
+	    String hql = "FROM Retailer WHERE status = :status"; // Use a parameter
+	    Query<Retailer> query = session.createQuery(hql, Retailer.class);
+	    query.setParameter("status", "Pending"); // Set the status parameter
+	    List<Retailer> requests = query.getResultList();
+	    session.close(); // Close the session to avoid memory leaks
+	    return requests;
+	}
+
+	@Override
+	public List<Retailer> getAllRetailers() {
+		Session session = sf.openSession();
+		String hql = "FROM Retailer"; // Adjust based on your entity structure
+		Query<Retailer> query = session.createQuery(hql, Retailer.class);
+		List<Retailer> retailers = query.getResultList();
+		session.close(); // Close the session to avoid memory leaks
+		return retailers;
+
+}
+	@Override
+	public int getUserCount() {
+	    Session session = sf.getCurrentSession();
+	    String hql = "SELECT COUNT(u) FROM User u"; // Adjust if your entity class is named differently
+	    Query<Long> query = session.createQuery(hql, Long.class);
+	    return query.uniqueResult().intValue();
+	}
+}

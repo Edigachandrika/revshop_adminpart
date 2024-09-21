@@ -1,0 +1,17 @@
+package com.revshop.exception;
+
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.ModelAndView;
+
+public class AdminController {
+	
+	 // Existing methods...
+
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleError(Exception e) {
+        ModelAndView mv = new ModelAndView("viewComplaints.jsp"); // Redirect to your complaints view
+        mv.addObject("errorMessage", "An error occurred: " + e.getMessage()); // Add error message
+        return mv;
+    }
+
+}
